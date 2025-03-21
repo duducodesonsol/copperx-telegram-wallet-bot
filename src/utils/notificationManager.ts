@@ -18,6 +18,9 @@ export class NotificationManager {
 
   async initialize(): Promise<boolean> {
     try {
+      if (!config.PUSHER_KEY || !config.PUSHER_CLUSTER) {
+        throw new Error('PUSHER_KEY and PUSHER_CLUSTER must be defined');
+      }
       this.pusherClient = new Pusher(config.PUSHER_KEY, {
         cluster: config.PUSHER_CLUSTER,
         authorizer: (channel) => ({
