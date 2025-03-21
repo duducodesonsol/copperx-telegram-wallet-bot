@@ -1,4 +1,8 @@
 import { Context, Markup } from 'telegraf';
+import { helpHandler } from './helpHandler';
+import { profileHandler } from './profileHandler';
+import { transferHandler } from './transferHandler';
+import { walletHandler } from './walletHandler';
 
 export const menuHandler = {
   async menuCommand(ctx: Context) {
