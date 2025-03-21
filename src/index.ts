@@ -7,8 +7,13 @@ import { profileHandler } from './handlers/profileHandler';
 import { menuHandler } from './handlers/menuHandler';
 import { helpHandler } from './handlers/helpHandler';
 import { authMiddleware } from './middlewares/authMiddleware';
+import { VercelRequest, VercelResponse } from '@vercel/node';
+
 
 // Create bot instance
+if (!config.TELEGRAM_BOT_TOKEN) {
+  throw new Error('TELEGRAM_BOT_TOKEN is not defined');
+}
 const bot = new Telegraf(config.TELEGRAM_BOT_TOKEN);
 
 // Use session middleware
@@ -62,6 +67,11 @@ bot.command('transactions', transferHandler.transactionsCommand);
 bot.command('profile', profileHandler.profileCommand);
 bot.command('help', helpHandler.helpCommand);
 bot.command('logout', authHandler.logoutCommand);
+
+// Export the bot as a Vercel serverless function
+export default async (req: VercelRequest, res: VercelResponse) => {
+  await bot.handleUpdate(req.body, res);
+};
 
 // Register callback query handlers
 bot.action('login', (ctx: any) => {
