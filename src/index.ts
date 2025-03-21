@@ -69,40 +69,78 @@ bot.command('logout', authHandler.logoutCommand);
 
 // Export the bot as a Vercel serverless function
 export default async (req: VercelRequest, res: VercelResponse) => {
+  console.log('Received request:', req.body);
+  if (!req.body || !req.body.update_id) {
+    res.status(400).send('Invalid request');
+    return;
+  }
   await bot.handleUpdate(req.body, res);
 };
 
 // Register callback query handlers
 bot.action('login', (ctx: any) => {
+  console.log('Login action triggered');
   ctx.scene.enter('login_wizard');
   return authHandler.loginCallback(ctx);
 });
 
-bot.action(/^menu|check_balance|send_money|transaction_history|profile|help$/, menuHandler.handleMenuCallbacks);
+bot.action(/^menu|check_balance|send_money|transaction_history|profile|help$/, (ctx: any) => {
+  console.log('Menu action triggered:', ctx.match[0]);
+  return menuHandler.handleMenuCallbacks(ctx);
+});
 
-bot.action('set_default_wallet', walletHandler.setDefaultWalletCallback);
-bot.action(/^set_default:(.+)$/, walletHandler.setDefaultWalletAction);
+bot.action('set_default_wallet', (ctx: any) => {
+  console.log('Set default wallet action triggered');
+  return walletHandler.setDefaultWalletCallback(ctx);
+});
+
+bot.action(/^set_default:(.+)$/, (ctx: any) => {
+  console.log('Set default wallet action triggered:', ctx.match[1]);
+  return walletHandler.setDefaultWalletAction(ctx);
+});
 
 bot.action('send_email', (ctx: any) => {
+  console.log('Send email action triggered');
   ctx.scene.enter('send_email_wizard');
   return transferHandler.sendEmailCallback(ctx);
 });
 
 bot.action('send_wallet', (ctx: any) => {
+  console.log('Send wallet action triggered');
   ctx.scene.enter('send_wallet_wizard');
   return transferHandler.sendWalletCallback(ctx);
 });
 
 bot.action('withdraw_bank', (ctx: any) => {
+  console.log('Withdraw bank action triggered');
   ctx.scene.enter('withdraw_bank_wizard');
   return transferHandler.withdrawBankCallback(ctx);
 });
 
-bot.action(/^network_(.+)$/, transferHandler.processWalletNetwork);
-bot.action('confirm_email_transfer', transferHandler.confirmEmailTransfer);
-bot.action('confirm_wallet_transfer', transferHandler.confirmWalletTransfer);
-bot.action('confirm_bank_withdrawal', transferHandler.confirmBankWithdrawal);
-bot.action('cancel_transfer', transferHandler.cancelTransfer);
+bot.action(/^network_(.+)$/, (ctx: any) => {
+  console.log('Network action triggered:', ctx.match[1]);
+  return transferHandler.processWalletNetwork(ctx);
+});
+
+bot.action('confirm_email_transfer', (ctx: any) => {
+  console.log('Confirm email transfer action triggered');
+  return transferHandler.confirmEmailTransfer(ctx);
+});
+
+bot.action('confirm_wallet_transfer', (ctx: any) => {
+  console.log('Confirm wallet transfer action triggered');
+  return transferHandler.confirmWalletTransfer(ctx);
+});
+
+bot.action('confirm_bank_withdrawal', (ctx: any) => {
+  console.log('Confirm bank withdrawal action triggered');
+  return transferHandler.confirmBankWithdrawal(ctx);
+});
+
+bot.action('cancel_transfer', (ctx: any) => {
+  console.log('Cancel transfer action triggered');
+  return transferHandler.cancelTransfer(ctx);
+});
 
 // Error handling
 bot.catch((err, ctx) => {
@@ -111,7 +149,7 @@ bot.catch((err, ctx) => {
 });
 
 // Set webhook
-const webhookUrl = `${config.VERCEL_URL}/api/webhook`;
+const webhookUrl = `${process.env.VERCEL_URL}/api/webhook`;
 bot.telegram.setWebhook(webhookUrl)
   .then(() => {
     console.log(`Webhook set to ${webhookUrl}`);
