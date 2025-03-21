@@ -148,15 +148,20 @@ bot.catch((err, ctx) => {
   ctx.reply('An error occurred. Please try again later.');
 });
 
-// Set webhook
-const webhookUrl = `${process.env.VERCEL_URL}/api/webhook`;
-bot.telegram.setWebhook(webhookUrl)
-  .then(() => {
+// Set webhook with retry mechanism
+const setWebhook = async () => {
+  const webhookUrl = `${process.env.VERCEL_URL}/api/webhook`;
+  console.log(`Setting webhook to ${webhookUrl}`);
+  try {
+    await bot.telegram.setWebhook(webhookUrl);
     console.log(`Webhook set to ${webhookUrl}`);
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error('Failed to set webhook:', err);
-  });
+    setTimeout(setWebhook, 5000); // Retry after 5 seconds
+  }
+};
+
+setWebhook();
 
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
