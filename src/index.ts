@@ -9,7 +9,6 @@ import { helpHandler } from './handlers/helpHandler';
 import { authMiddleware } from './middlewares/authMiddleware';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
-
 // Create bot instance
 if (!config.TELEGRAM_BOT_TOKEN) {
   throw new Error('TELEGRAM_BOT_TOKEN is not defined');
@@ -111,13 +110,14 @@ bot.catch((err, ctx) => {
   ctx.reply('An error occurred. Please try again later.');
 });
 
-// Start the bot
-bot.launch()
+// Set webhook
+const webhookUrl = `${config.VERCEL_URL}/api/webhook`;
+bot.telegram.setWebhook(webhookUrl)
   .then(() => {
-    console.log('Copperx Telegram Bot is running...');
+    console.log(`Webhook set to ${webhookUrl}`);
   })
   .catch((err) => {
-    console.error('Failed to start bot:', err);
+    console.error('Failed to set webhook:', err);
   });
 
 // Enable graceful stop
