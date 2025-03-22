@@ -151,6 +151,10 @@ bot.telegram.setWebhook(webhookUrl)
 // Export the bot as a Vercel serverless function
 export default async (req: VercelRequest, res: VercelResponse) => {
   console.log('Received request:', req.body);
+  if (req.method === 'GET') {
+    res.status(200).send('Health check OK');
+    return;
+  }
   if (!req.body || !req.body.update_id) {
     res.status(400).send('Invalid request');
     return;
