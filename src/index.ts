@@ -7,7 +7,6 @@ import { profileHandler } from './handlers/profileHandler';
 import { menuHandler } from './handlers/menuHandler';
 import { helpHandler } from './handlers/helpHandler';
 import { authMiddleware } from './middlewares/authMiddleware';
-import { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Create bot instance
 if (!config.TELEGRAM_BOT_TOKEN) {
@@ -66,16 +65,6 @@ bot.command('transactions', transferHandler.transactionsCommand);
 bot.command('profile', profileHandler.profileCommand);
 bot.command('help', helpHandler.helpCommand);
 bot.command('logout', authHandler.logoutCommand);
-
-// Export the bot as a Vercel serverless function
-export default async (req: VercelRequest, res: VercelResponse) => {
-  console.log('Received request:', req.body);
-  if (!req.body || !req.body.update_id) {
-    res.status(400).send('Invalid request');
-    return;
-  }
-  await bot.handleUpdate(req.body, res);
-};
 
 // Register callback query handlers
 bot.action('login', (ctx: any) => {
@@ -148,20 +137,14 @@ bot.catch((err, ctx) => {
   ctx.reply('An error occurred. Please try again later.');
 });
 
-// Set webhook with retry mechanism
-const setWebhook = async () => {
-  const webhookUrl = `${process.env.VERCEL_URL}/api/webhook`;
-  console.log(`Setting webhook to ${webhookUrl}`);
-  try {
-    await bot.telegram.setWebhook(webhookUrl);
-    console.log(`Webhook set to ${webhookUrl}`);
-  } catch (err) {
-    console.error('Failed to set webhook:', err);
-    setTimeout(setWebhook, 5000); // Retry after 5 seconds
-  }
-};
-
-setWebhook();
+// Start polling
+bot.launch()
+  .then(() => {
+    console.log('Bot started with polling');
+  })
+  .catch((err) => {
+    console.error('Failed to start bot with polling:', err);
+  });
 
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
