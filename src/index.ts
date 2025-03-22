@@ -138,15 +138,30 @@ bot.catch((err, ctx) => {
   ctx.reply('An error occurred. Please try again later.');
 });
 
-// Set webhook
-const webhookUrl = `${process.env.VERCEL_URL}/api/webhook`;
-bot.telegram.setWebhook(webhookUrl)
-  .then(() => {
+// Set webhook with retry mechanism
+const setWebhook = async (retryCount = 0) => {
+  const webhookUrl = `${process.env.VERCEL_URL}/api/webhook`;
+  console.log(`Setting webhook to ${webhookUrl}`);
+  try {
+    await bot.telegram.setWebhook(webhookUrl);
     console.log(`Webhook set to ${webhookUrl}`);
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error('Failed to set webhook:', err);
-  });
+    if (err.response && err.response.error_code === 429 && err.response.parameters && err.response.parameters.retry_after) {
+      const retryAfter = err.response.parameters.retry_after;
+      console.log(`Retrying after ${retryAfter} seconds`);
+      setTimeout(() => setWebhook(retryCount + 1), retryAfter * 1000);
+    } else if (retryCount < 5) {
+      const retryDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+      console.log(`Retrying in ${retryDelay / 1000} seconds`);
+      setTimeout(() => setWebhook(retryCount + 1), retryDelay);
+    } else {
+      console.error('Max retries reached. Failed to set webhook.');
+    }
+  }
+};
+
+setWebhook();
 
 // Export the bot as a Vercel serverless function
 export default async (req: VercelRequest, res: VercelResponse) => {
