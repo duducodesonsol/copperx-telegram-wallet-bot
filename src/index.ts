@@ -7,6 +7,7 @@ import { profileHandler } from './handlers/profileHandler';
 import { menuHandler } from './handlers/menuHandler';
 import { helpHandler } from './handlers/helpHandler';
 import { authMiddleware } from './middlewares/authMiddleware';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Create bot instance
 if (!config.TELEGRAM_BOT_TOKEN) {
@@ -137,14 +138,25 @@ bot.catch((err, ctx) => {
   ctx.reply('An error occurred. Please try again later.');
 });
 
-// Start polling
-bot.launch()
+// Set webhook
+const webhookUrl = `${process.env.VERCEL_URL}/api/webhook`;
+bot.telegram.setWebhook(webhookUrl)
   .then(() => {
-    console.log('Bot started with polling');
+    console.log(`Webhook set to ${webhookUrl}`);
   })
   .catch((err) => {
-    console.error('Failed to start bot with polling:', err);
+    console.error('Failed to set webhook:', err);
   });
+
+// Export the bot as a Vercel serverless function
+export default async (req: VercelRequest, res: VercelResponse) => {
+  console.log('Received request:', req.body);
+  if (!req.body || !req.body.update_id) {
+    res.status(400).send('Invalid request');
+    return;
+  }
+  await bot.handleUpdate(req.body, res);
+};
 
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
