@@ -58,14 +58,38 @@ bot.use(stage.middleware());
 bot.use(authMiddleware);
 
 // Register command handlers
-bot.command('start', authHandler.startCommand);
-bot.command('menu', menuHandler.menuCommand);
-bot.command('balance', walletHandler.balanceCommand);
-bot.command('send', transferHandler.sendCommand);
-bot.command('transactions', transferHandler.transactionsCommand);
-bot.command('profile', profileHandler.profileCommand);
-bot.command('help', helpHandler.helpCommand);
-bot.command('logout', authHandler.logoutCommand);
+bot.start((ctx) => {
+  console.log('Start command received');
+  return authHandler.startCommand(ctx);
+});
+bot.command('menu', (ctx) => {
+  console.log('Menu command received');
+  return menuHandler.menuCommand(ctx);
+});
+bot.command('balance', (ctx) => {
+  console.log('Balance command received');
+  return walletHandler.balanceCommand(ctx);
+});
+bot.command('send', (ctx) => {
+  console.log('Send command received');
+  return transferHandler.sendCommand(ctx);
+});
+bot.command('transactions', (ctx) => {
+  console.log('Transactions command received');
+  return transferHandler.transactionsCommand(ctx);
+});
+bot.command('profile', (ctx) => {
+  console.log('Profile command received');
+  return profileHandler.profileCommand(ctx);
+});
+bot.command('help', (ctx) => {
+  console.log('Help command received');
+  return helpHandler.helpCommand(ctx);
+});
+bot.command('logout', (ctx) => {
+  console.log('Logout command received');
+  return authHandler.logoutCommand(ctx);
+});
 
 // Register callback query handlers
 bot.action('login', (ctx: any) => {
@@ -147,8 +171,10 @@ const setWebhook = async (retryCount = 0) => {
     console.log(`Webhook set to ${webhookUrl}`);
   } catch (err) {
     console.error('Failed to set webhook:', err);
-    if (err instanceof Error && 'response' in err && err.response && (err.response as any).error_code === 429 && (err.response as any).parameters && (err.response as any).parameters.retry_after) {
-      const retryAfter = (err as any).response.parameters.retry_after;
+    if (err instanceof Error && 'response' in err) {
+      const response = err.response as { error_code: number; parameters?: { retry_after?: number } };
+      if (response.error_code === 429 && response.parameters && response.parameters.retry_after) {
+        const retryAfter = response.parameters.retry_after;
       console.log(`Retrying after ${retryAfter} seconds`);
       setTimeout(() => setWebhook(retryCount + 1), retryAfter * 1000);
     } else if (retryCount < 5) {
@@ -158,6 +184,7 @@ const setWebhook = async (retryCount = 0) => {
     } else {
       console.error('Max retries reached. Failed to set webhook.');
     }
+  }
   }
 };
 
@@ -174,6 +201,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     res.status(400).send('Invalid request');
     return;
   }
+  console.log('Handling update:', req.body);
   await bot.handleUpdate(req.body, res);
 };
 
