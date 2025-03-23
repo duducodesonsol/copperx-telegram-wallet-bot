@@ -147,8 +147,8 @@ const setWebhook = async (retryCount = 0) => {
     console.log(`Webhook set to ${webhookUrl}`);
   } catch (err) {
     console.error('Failed to set webhook:', err);
-    if (err.response && err.response.error_code === 429 && err.response.parameters && err.response.parameters.retry_after) {
-      const retryAfter = err.response.parameters.retry_after;
+    if (err instanceof Error && 'response' in err && err.response && err.response.error_code === 429 && err.response.parameters && err.response.parameters.retry_after) {
+      const retryAfter = (err as any).response.parameters.retry_after;
       console.log(`Retrying after ${retryAfter} seconds`);
       setTimeout(() => setWebhook(retryCount + 1), retryAfter * 1000);
     } else if (retryCount < 5) {
