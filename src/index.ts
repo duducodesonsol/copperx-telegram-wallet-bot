@@ -58,7 +58,7 @@ bot.use(stage.middleware());
 bot.use(authMiddleware);
 
 // Register command handlers
-bot.start(authHandler.startCommand);
+bot.command('start', authHandler.startCommand);
 bot.command('menu', menuHandler.menuCommand);
 bot.command('balance', walletHandler.balanceCommand);
 bot.command('send', transferHandler.sendCommand);
